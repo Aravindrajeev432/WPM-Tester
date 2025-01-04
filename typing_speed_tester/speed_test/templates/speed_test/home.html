@@ -246,7 +246,6 @@
 
     function resetTest(getNewWords = true) {
         currentIndex = 0;
-        mistakes = [];
         currentTestMistakes = [];
         $('#input-text').val('').prop('disabled', false);
         $('#result').addClass('d-none');
@@ -256,6 +255,7 @@
         $('#timer').text('Time: 0s');
         
         if (getNewWords) {
+            mistakes = []; 
             getRandomText();
         } else {
             displayText();
@@ -263,54 +263,37 @@
         }
     }
 
-    $('#start-btn').click(function() {
-        if (!isTestActive) {
-            $(this).text('Restart Test');
-            resetTest(true); 
-        } else {
-            $(this).text('Start Test');
-            resetTest(true); 
-        }
-    });
-
     function finishTest() {
         isTestActive = false;
         endTime = new Date();
         clearInterval(timerInterval);
         
-        const timeTaken = (endTime - startTime) / 1000;
-        const typedText = $('#input-text').val();
-        
-        const wpm = calculateWPM(typedText, timeTaken);
-        const accuracy = calculateAccuracy(originalText, typedText);
+        const timeInSeconds = (endTime - startTime) / 1000;
+        const wpm = calculateWPM(originalText, timeInSeconds);
+        const accuracy = calculateAccuracy(originalText, currentIndex);
         
         $('#wpm').text(wpm);
         $('#accuracy').text(accuracy);
-        $('#time-taken').text(timeTaken.toFixed(1));
+        $('#time-taken').text(timeInSeconds.toFixed(1));
         $('#result').removeClass('d-none');
-        
         $('#input-text').prop('disabled', true);
-        $('#start-btn').text('Start Test');
+        $('#start-btn').text('Start New Test');
         
-        const formData = new FormData();
-        formData.append('text', originalText);
-        formData.append('wpm', wpm);
-        formData.append('accuracy', accuracy);
-        formData.append('time_taken', timeTaken);
-        formData.append('mistakes', JSON.stringify(mistakes));
-
         $.ajax({
-            url: '{% url "speed_test:save_result" %}',
+            url: '/save_result/',
             type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
+            data: {
+                text: originalText,
+                wpm: wpm,
+                accuracy: accuracy,
+                time_taken: timeInSeconds,
+                mistakes: JSON.stringify(mistakes), 
+                word_mistakes: JSON.stringify(getWordMistakes()),
+                csrfmiddlewaretoken: '{{ csrf_token }}'
             },
             success: function(response) {
-                if (response.status === 'success') {
-                    window.location.href = '{% url "speed_test:results" %}';
+                if (!response.success) {
+                    console.error('Failed to save result:', response.error);
                 }
             }
         });
@@ -324,15 +307,24 @@
             currentIndex++;
             updateCursor(currentIndex);
         } else {
-            // Record mistake
             const mistake = {
                 expected: currentChar,
                 typed: typedChar,
                 position: currentIndex
             };
-            addMistake(mistake);
+            mistakes.push(mistake); 
+            currentTestMistakes.push(mistake); 
             
-            // Reset test with same text
+            const mistakeRow = `
+                <tr class="mistake-row">
+                    <td><span class="space-char">${currentChar === ' ' ? '␣' : currentChar}</span></td>
+                    <td><span class="space-char">${typedChar === ' ' ? '␣' : typedChar}</span></td>
+                    <td>${currentIndex + 1}</td>
+                </tr>
+            `;
+            $('#mistakes-list').prepend(mistakeRow);
+            $('#mistakes-section').show();
+            
             resetTest(false);
             return;
         }
@@ -351,5 +343,14 @@
 
     $('#input-text').on('input', handleInput);
 
+    $('#start-btn').click(function() {
+        if (!isTestActive) {
+            $(this).text('Restart Test');
+            resetTest(true); 
+        } else {
+            $(this).text('Start Test');
+            resetTest(true); 
+        }
+    });
 </script>
 {% endblock %}
