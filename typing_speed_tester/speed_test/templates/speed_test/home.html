@@ -16,8 +16,14 @@
 .cursor {
     position: absolute;
     width: 2px;
-    background-color: #0d6efd;
+    background-color: #198754;  /* Bootstrap's success color */
     animation: blink 1s infinite;
+    height: 1.5em;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.cursor.error {
+    background-color: #dc3545;  /* Bootstrap's danger color */
 }
 @keyframes blink {
     50% { opacity: 0; }
@@ -253,6 +259,7 @@
         $('#mistakes-list').empty();
         clearInterval(timerInterval);
         $('#timer').text('Time: 0s');
+        $('#cursor').removeClass('error');  // Reset cursor state
         
         if (getNewWords) {
             mistakes = []; 
@@ -306,7 +313,11 @@
         if (typedChar === currentChar) {
             currentIndex++;
             updateCursor(currentIndex);
+            $('#cursor').removeClass('error');
         } else {
+            // Show error state
+            $('#cursor').addClass('error');
+            
             const mistake = {
                 expected: currentChar,
                 typed: typedChar,
@@ -325,7 +336,10 @@
             $('#mistakes-list').prepend(mistakeRow);
             $('#mistakes-section').show();
             
-            resetTest(false);
+            // Add a small delay before resetting to show the error state
+            setTimeout(() => {
+                resetTest(false);
+            }, 200);
             return;
         }
 
