@@ -255,14 +255,14 @@
         currentTestMistakes = [];
         $('#input-text').val('').prop('disabled', false);
         $('#result').addClass('d-none');
-        $('#mistakes-section').hide();
-        $('#mistakes-list').empty();
+        $('#cursor').removeClass('error');  // Reset cursor state
         clearInterval(timerInterval);
         $('#timer').text('Time: 0s');
-        $('#cursor').removeClass('error');  // Reset cursor state
         
         if (getNewWords) {
             mistakes = []; 
+            $('#mistakes-section').hide();  // Only hide mistakes when starting new test
+            $('#mistakes-list').empty();
             getRandomText();
         } else {
             displayText();
