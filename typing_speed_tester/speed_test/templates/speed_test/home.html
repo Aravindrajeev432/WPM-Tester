@@ -278,6 +278,37 @@
         }
     }
 
+    function getWordMistakes() {
+        // Create word-level mistakes mapping
+        const words = originalText.split(' ');
+        let currentPos = 0;
+        const wordMistakes = [];
+        
+        // Build position to word mapping
+        const wordPositions = {};
+        words.forEach((word, index) => {
+            for (let i = 0; i < word.length; i++) {
+                wordPositions[currentPos + i] = { word, index };
+            }
+            currentPos += word.length + 1; // +1 for space
+        });
+        
+        // Map mistakes to words
+        mistakes.forEach(mistake => {
+            const wordInfo = wordPositions[mistake.position];
+            if (wordInfo) {
+                wordMistakes.push({
+                    word: wordInfo.word,
+                    expected: mistake.expected,
+                    typed: mistake.typed,
+                    position: mistake.position
+                });
+            }
+        });
+        
+        return wordMistakes;
+    }
+
     function finishTest() {
         isTestActive = false;
         endTime = new Date();
@@ -294,22 +325,33 @@
         $('#input-text').prop('disabled', true);
         $('#start-btn').text('Start New Test');
         
+        const formData = new FormData();
+        formData.append('text', originalText);
+        formData.append('wpm', wpm);
+        formData.append('accuracy', accuracy);
+        formData.append('time_taken', timeInSeconds);
+        formData.append('mistakes', JSON.stringify(mistakes));
+        formData.append('word_mistakes', JSON.stringify(getWordMistakes()));
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
         $.ajax({
-            url: '/save_result/',
+            url: '{% url "speed_test:save_result" %}',
             type: 'POST',
-            data: {
-                text: originalText,
-                wpm: wpm,
-                accuracy: accuracy,
-                time_taken: timeInSeconds,
-                mistakes: JSON.stringify(mistakes), 
-                word_mistakes: JSON.stringify(getWordMistakes()),
-                csrfmiddlewaretoken: '{{ csrf_token }}'
-            },
+            data: formData,
+            processData: false,
+            contentType: false,
             success: function(response) {
-                if (!response.success) {
+                if (response.status === 'success') {
+                    // Redirect to results page after successful save
+                    window.location.href = '{% url "speed_test:results" %}';
+                } else {
                     console.error('Failed to save result:', response.error);
+                    alert('Failed to save your test result. Please try again.');
                 }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error saving result:', error);
+                alert('Failed to save your test result. Please try again.');
             }
         });
     }
