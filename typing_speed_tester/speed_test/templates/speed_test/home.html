@@ -246,18 +246,16 @@
 
     function resetTest(getNewWords = true) {
         currentIndex = 0;
-        isTestActive = false;
+        mistakes = [];
+        currentTestMistakes = [];
+        $('#input-text').val('').prop('disabled', false);
+        $('#result').addClass('d-none');
+        $('#mistakes-section').hide();
+        $('#mistakes-list').empty();
         clearInterval(timerInterval);
         $('#timer').text('Time: 0s');
-        $('#input-text').val('');
-        $('#result').addClass('d-none');
-        $('.correct, .incorrect').removeClass('correct incorrect');
         
         if (getNewWords) {
-            mistakes = [];
-            currentTestMistakes = [];
-            $('#mistakes-section').hide();
-            $('#mistakes-list').empty();
             getRandomText();
         } else {
             displayText();
@@ -334,8 +332,8 @@
             };
             addMistake(mistake);
             
-            // Reset test on mistake
-            resetTest(true);
+            // Reset test with same text
+            resetTest(false);
             return;
         }
 
