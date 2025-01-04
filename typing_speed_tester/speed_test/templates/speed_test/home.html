@@ -327,22 +327,16 @@
             updateCursor(currentIndex);
         } else {
             // Record mistake
-            mistakes.unshift({
+            const mistake = {
                 expected: currentChar,
                 typed: typedChar,
                 position: currentIndex
-            });
+            };
+            addMistake(mistake);
             
-            // Update mistakes table
-            const mistakeRow = `
-                <tr class="mistake-row">
-                    <td><span class="space-char">${currentChar === ' ' ? '␣' : currentChar}</span></td>
-                    <td><span class="space-char">${typedChar === ' ' ? '␣' : typedChar}</span></td>
-                    <td>${currentIndex + 1}</td>
-                </tr>
-            `;
-            $('#mistakes-list').prepend(mistakeRow);
-            $('#mistakes-section').show();
+            // Reset test on mistake
+            resetTest(true);
+            return;
         }
 
         this.value = '';
