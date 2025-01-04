@@ -56,8 +56,14 @@
     line-height: 1.5;
 }
 .current {
-    background-color: #e9ecef;
     border-radius: 2px;
+    transition: background-color 0.2s;
+}
+.current.correct {
+    background-color: rgba(25, 135, 84, 0.2);  /* Bootstrap success color with opacity */
+}
+.current.incorrect {
+    background-color: rgba(220, 53, 69, 0.2);  /* Bootstrap danger color with opacity */
 }
 .correct {
     color: #198754;
@@ -256,6 +262,7 @@
         $('#input-text').val('').prop('disabled', false);
         $('#result').addClass('d-none');
         $('#cursor').removeClass('error');  // Reset cursor state
+        $('.current').removeClass('current correct incorrect');  // Reset character states
         clearInterval(timerInterval);
         $('#timer').text('Time: 0s');
         
@@ -310,13 +317,17 @@
         const currentChar = originalText[currentIndex];
         const typedChar = this.value;
         
+        const currentElement = $(`#char-${currentIndex}`);
+        currentElement.addClass('current');
+        
         if (typedChar === currentChar) {
             currentIndex++;
-            updateCursor(currentIndex);
+            currentElement.addClass('correct').removeClass('incorrect');
             $('#cursor').removeClass('error');
         } else {
             // Show error state
             $('#cursor').addClass('error');
+            currentElement.addClass('incorrect').removeClass('correct');
             
             const mistake = {
                 expected: currentChar,
@@ -344,6 +355,7 @@
         }
 
         this.value = '';
+        updateCursor(currentIndex);
         
         if (currentIndex >= originalText.length) {
             finishTest();
