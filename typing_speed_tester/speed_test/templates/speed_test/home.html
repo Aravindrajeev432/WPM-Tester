@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Speed Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .typing-box {
+            font-size: 24px;
+            line-height: 1.8;
+            min-height: 120px;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        #sample-text {
+            font-family: monospace;
+            white-space: pre-wrap;
+            position: relative;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        #sample-text span {
+            position: relative;
+            font-weight: inherit;
+        }
+        .correct {
+            color: #198754;
+            background-color: #d1e7dd;
+        }
+        .incorrect {
+            color: #dc3545;
+            background-color: #f8d7da;
+            text-decoration: underline wavy #dc3545;
+        }
+        .current {
+            border-left: 2px solid #0d6efd;
+            margin-left: -2px;
+        }
+        .cursor {
+            position: absolute;
+            width: 2px;
+            height: 1.2em;
+            background-color: #0d6efd;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #input-text {
+            position: absolute;
+            left: -9999px;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Typing Speed Test</h1>
+        
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <div class="timer" id="timer">Time: 0s</div>
+                        <div class="mt-2">
+                            <label for="word-count" class="form-label">Number of Words:</label>
+                            <select class="form-select form-select-sm d-inline-block w-auto" id="word-count">
+                                {% for i in "xxxxxxxxxxxxxxxx" %}
+                                    <option value="{{ forloop.counter|add:9 }}">{{ forloop.counter|add:9 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{% url 'speed_test:results' %}" class="btn btn-info me-2">View Results</a>
+                        <a href="{% url 'speed_test:manage_words' %}" class="btn btn-secondary me-2">Manage Words ({{ words_count }})</a>
+                        <button class="btn btn-primary" id="start-btn" {% if words_count == 0 %}disabled{% endif %}>Start Test</button>
+                    </div>
+                </div>
+                
+                {% if words_count == 0 %}
+                <div class="alert alert-warning">
+                    No words available for testing. Please add some words first using the "Manage Words" button.
+                </div>
+                {% endif %}
+                
+                <div class="typing-box">
+                    <div id="sample-text"></div>
+                </div>
+                
+                <input type="text" class="form-control" id="input-text" autocomplete="off" spellcheck="false">
+                
+                <div class="mt-3">
+                    <div id="result" class="alert alert-info d-none">
+                        <p>WPM: <span id="wpm">0</span></p>
+                        <p>Accuracy: <span id="accuracy">0</span>%</p>
+                        <p>Time: <span id="time-taken">0</span> seconds</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let startTime, endTime, timerInterval;
+        let isTestActive = false;
+        let currentIndex = 0;
+        let originalText = '';
+
+        function getRandomText() {
+            const wordCount = $('#word-count').val();
+            $.get('/get_text/', { word_count: wordCount }, function(data) {
+                if (data.error) {
+                    $('#sample-text').html('<div class="alert alert-warning">' + data.error + '</div>');
+                    $('#start-btn').prop('disabled', true);
+                } else {
+                    originalText = data.text;
+                    displayText();
+                    startTypingTest();
+                }
+            });
+        }
+
+        function displayText() {
+            const chars = originalText.split('');
+            const spans = chars.map((char, index) => 
+                `<span id="char-${index}">${char}</span>`
+            ).join('');
+            $('#sample-text').html(spans);
+            updateCursor(0);
+        }
+
+        function updateCursor(index) {
+            $('.current').removeClass('current');
+            $(`#char-${index}`).addClass('current');
+        }
+
+        function calculateWPM(text, timeInSeconds) {
+            const words = text.trim().split(/\s+/).length;
+            const minutes = timeInSeconds / 60;
+            return Math.round(words / minutes);
+        }
+
+        function calculateAccuracy(original, typed) {
+            if (typed.length === 0) return 0;
+            
+            let correct = 0;
+            const minLength = Math.min(original.length, typed.length);
+            
+            for (let i = 0; i < minLength; i++) {
+                if (original[i] === typed[i]) correct++;
+            }
+            
+            return Math.round((correct / original.length) * 100);
+        }
+
+        function updateTimer() {
+            const currentTime = new Date();
+            const elapsedTime = Math.floor((currentTime - startTime) / 1000);
+            $('#timer').text(`Time: ${elapsedTime}s`);
+        }
+
+        function startTypingTest() {
+            isTestActive = true;
+            currentIndex = 0;
+            $('#input-text').prop('disabled', false).val('').focus();
+            $('#result').addClass('d-none');
+            $('.correct, .incorrect').removeClass('correct incorrect');
+            displayText();
+            startTime = new Date();
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function resetTest(getNewWords = true) {
+            currentIndex = 0;
+            isTestActive = false;
+            clearInterval(timerInterval);
+            $('#timer').text('Time: 0s');
+            $('#input-text').val('');
+            $('#result').addClass('d-none');
+            $('.correct, .incorrect').removeClass('correct incorrect');
+            
+            if (getNewWords) {
+                getRandomText();
+            } else {
+                displayText();
+                startTypingTest();
+            }
+        }
+
+        $('#start-btn').click(function() {
+            if (!isTestActive) {
+                // Start new test
+                $(this).text('Restart Test');
+                resetTest(true); // Get new words
+            } else {
+                // Reset test
+                $(this).text('Start Test');
+                resetTest(true); // Get new words
+            }
+        });
+
+        function endTest() {
+            isTestActive = false;
+            endTime = new Date();
+            clearInterval(timerInterval);
+            
+            const timeTaken = (endTime - startTime) / 1000;
+            const typedText = $('#input-text').val();
+            
+            const wpm = calculateWPM(typedText, timeTaken);
+            const accuracy = calculateAccuracy(originalText, typedText);
+            
+            $('#wpm').text(wpm);
+            $('#accuracy').text(accuracy);
+            $('#time-taken').text(timeTaken.toFixed(1));
+            $('#result').removeClass('d-none');
+            
+            $('#input-text').prop('disabled', true);
+            $('#start-btn').text('Start Test');
+            
+            // Save result
+            $.post('/save_result/', {
+                text: originalText,
+                wpm: wpm,
+                accuracy: accuracy,
+                time_taken: timeTaken,
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            });
+        }
+
+        $(document).on('keydown', function(e) {
+            if (!isTestActive) return;
+            
+            // Ensure input is focused when typing starts
+            $('#input-text').focus();
+        });
+
+        $('#input-text').on('input', function(e) {
+            if (!isTestActive) return;
+
+            const typedText = $(this).val();
+            const currentChar = typedText[currentIndex];
+            
+            if (currentChar !== originalText[currentIndex]) {
+                // Mistake made - mark character as incorrect and stop
+                $(`#char-${currentIndex}`).addClass('incorrect');
+                setTimeout(() => {
+                    resetTest(false); // Keep the same words
+                }, 500);
+                return;
+            }
+
+            // Mark character as correct and move cursor
+            $(`#char-${currentIndex}`).addClass('correct');
+            currentIndex++;
+            updateCursor(currentIndex);
+
+            // Check if test is complete
+            if (currentIndex >= originalText.length) {
+                endTest();
+            }
+        });
+    </script>
+</body>
+</html>
