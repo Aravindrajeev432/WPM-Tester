@@ -10,4 +10,6 @@ urlpatterns = [
     path('manage_words/', views.manage_words, name='manage_words'),
     path('delete_word/<int:word_id>/', views.delete_word, name='delete_word'),
     path('results/', views.view_results, name='results'),
+    path('mistakes/', views.view_mistakes, name='mistakes'),
+    path('delete_result/<int:result_id>/', views.delete_result, name='delete_result'),
 ]
