@@ -103,63 +103,73 @@ def view_results(request):
     return render(request, 'speed_test/results.html', {'results': results})
 
 def view_mistakes(request):
-    # Get all typing tests with mistakes
-    all_tests = TypingTest.objects.exclude(mistakes=[]).order_by('-created_at')
+    # Get all tests ordered by most recent first
+    tests = TypingTest.objects.all().order_by('-created_at')
     
-    # Aggregate mistake statistics
-    letter_mistakes = Counter()  # expected -> typed
-    mistaken_letters = Counter()  # most mistaken letters
-    wrong_typed_letters = Counter()  # most wrongly typed letters
-    word_mistakes = Counter()  # most mistaken words
+    # Calculate total tests and mistakes
+    total_tests = tests.count()
+    total_mistakes = sum(len(test.mistakes) for test in tests)
     
-    for test in all_tests:
-        test.word_count = len(test.text.split())
-        test.mistake_count = len(test.mistakes)
-        
-        # Process mistakes for statistics
-        for mistake in test.mistakes:
-            # Track letter mistakes
-            key = f"{mistake['expected']}|{mistake['typed']}"
-            letter_mistakes[key] += 1
-            
-            # Track individual letter statistics
-            mistaken_letters[mistake['expected']] += 1
-            wrong_typed_letters[mistake['typed']] += 1
-        
+    # Process word-level mistakes
+    word_mistake_counts = Counter()
+    letter_mistake_counts = Counter()
+    wrong_typed_counts = Counter()
+    common_mistakes = Counter()
+    
+    for test in tests:
         # Process word mistakes
-        for word_mistake in test.word_mistakes:
-            word = word_mistake.get('word', '')
-            if word:
-                word_mistakes[word] += 1
+        for mistake in test.word_mistakes:
+            word_mistake_counts[mistake['word']] += 1
+        
+        # Process character mistakes
+        for mistake in test.mistakes:
+            letter_mistake_counts[mistake['expected']] += 1
+            wrong_typed_counts[mistake['typed']] += 1
+            mistake_key = (mistake['expected'], mistake['typed'])
+            common_mistakes[mistake_key] += 1
     
-    # Create paginator
-    paginator = Paginator(all_tests, 5)  # Show 5 tests per page
-    page_number = request.GET.get('page', 1)
-    tests = paginator.get_page(page_number)
-    
-    # Get top 10 for each category
-    common_mistakes = [
-        {'expected': k.split('|')[0], 'typed': k.split('|')[1], 'count': v}
-        for k, v in letter_mistakes.most_common(10)
+    # Get top 10 most mistaken words
+    most_mistaken_words = [
+        {'word': word, 'count': count}
+        for word, count in word_mistake_counts.most_common(10)
     ]
     
+    # Get top 10 most mistaken letters
+    most_mistaken_letters = [
+        {'letter': letter, 'count': count}
+        for letter, count in letter_mistake_counts.most_common(10)
+    ]
+    
+    # Get top 10 most wrongly typed letters
+    most_wrong_typed = [
+        {'letter': letter, 'count': count}
+        for letter, count in wrong_typed_counts.most_common(10)
+    ]
+    
+    # Get top 10 common mistakes
+    common_mistakes_list = [
+        {'expected': exp, 'typed': typed, 'count': count}
+        for (exp, typed), count in common_mistakes.most_common(10)
+    ]
+    
+    # Add mistake details to each test
+    for test in tests:
+        test.mistake_count = len(test.mistakes)
+        test.word_count = len(test.text.split())
+    
+    # Create paginator
+    paginator = Paginator(tests, 5)  # Show 5 tests per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
     context = {
-        'tests': tests,
-        'common_mistakes': common_mistakes,
-        'total_mistakes': sum(test.mistake_count for test in all_tests),
-        'total_tests': all_tests.count(),
-        'most_mistaken_words': [
-            {'word': word, 'count': count}
-            for word, count in word_mistakes.most_common(10)
-        ],
-        'most_mistaken_letters': [
-            {'letter': letter, 'count': count}
-            for letter, count in mistaken_letters.most_common(10)
-        ],
-        'most_wrong_typed': [
-            {'letter': letter, 'count': count}
-            for letter, count in wrong_typed_letters.most_common(10)
-        ]
+        'tests': page_obj,
+        'total_tests': total_tests,
+        'total_mistakes': total_mistakes,
+        'most_mistaken_words': most_mistaken_words,
+        'most_mistaken_letters': most_mistaken_letters,
+        'most_wrong_typed': most_wrong_typed,
+        'common_mistakes': common_mistakes_list,
     }
     
     return render(request, 'speed_test/mistakes.html', context)
