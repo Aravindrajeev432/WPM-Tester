@@ -41,6 +41,10 @@ def save_result(request):
         
         try:
             mistakes = json.loads(mistakes_json)
+            # Only save if there are mistakes
+            if not mistakes:
+                return JsonResponse({'status': 'success', 'id': None})
+            
             # Create word-level mistakes
             word_mistakes = []
             words = text.split()
@@ -103,8 +107,8 @@ def view_results(request):
     return render(request, 'speed_test/results.html', {'results': results})
 
 def view_mistakes(request):
-    # Get all tests ordered by most recent first
-    tests = TypingTest.objects.all().order_by('-created_at')
+    # Get all tests with mistakes ordered by most recent first
+    tests = TypingTest.objects.exclude(mistakes=[]).order_by('-created_at')
     
     # Calculate total tests and mistakes
     total_tests = tests.count()
