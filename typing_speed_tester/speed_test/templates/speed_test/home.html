@@ -82,7 +82,13 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <div class="timer" id="timer">Time: 0s</div>
+                        <h5 class="card-title mb-0">Typing Test</h5>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center">
+                            <div id="live-wpm" class="me-3">WPM: 0</div>
+                            <div class="timer" id="timer">Time: 0s</div>
+                        </div>
                         <div class="mt-2">
                             <label for="word-count" class="form-label">Number of Words:</label>
                             <select class="form-select form-select-sm d-inline-block w-auto" id="word-count">
@@ -239,9 +245,18 @@
     }
 
     function updateTimer() {
+        if (!isTestActive) return;
         const currentTime = new Date();
-        const elapsedTime = Math.floor((currentTime - startTime) / 1000);
-        $('#timer').text(`Time: ${elapsedTime}s`);
+        const elapsedTime = (currentTime - startTime) / 1000;
+        $('#timer').text(`Time: ${Math.round(elapsedTime)}s`);
+        
+        // Calculate and update live WPM
+        if (currentIndex > 0) {
+            const minutes = elapsedTime / 60;
+            const words = currentIndex / 5; // Standard: 5 characters = 1 word
+            const wpm = Math.round(words / minutes);
+            $('#live-wpm').text(`WPM: ${wpm}`);
+        }
     }
 
     function startTypingTest() {
@@ -259,13 +274,15 @@
 
     function resetTest(getNewWords = true) {
         currentIndex = 0;
-        currentTestMistakes = [];
+        isTestActive = false;
         $('#input-text').val('').prop('disabled', false);
         $('#result').addClass('d-none');
+        $('#start-btn').text('Start Test');
         $('#cursor').removeClass('error');  // Reset cursor state
         $('.current').removeClass('current correct incorrect');  // Reset character states
         clearInterval(timerInterval);
         $('#timer').text('Time: 0s');
+        $('#live-wpm').text('WPM: 0');  // Reset live WPM
         
         if (getNewWords) {
             mistakes = []; 
