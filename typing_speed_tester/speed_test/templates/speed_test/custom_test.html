@@ -2,6 +2,35 @@
 
 {% block title %}Custom Typing Test{% endblock %}
 
+{% block extra_style %}
+<style>
+    .correct {
+        color: #198754;  /* Bootstrap success color */
+    }
+    .incorrect {
+        color: #dc3545;  /* Bootstrap danger color */
+    }
+    .current {
+        border-radius: 2px;
+        transition: background-color 0.2s;
+    }
+    .current.correct {
+        background-color: rgba(25, 135, 84, 0.2);  /* Bootstrap success color with opacity */
+    }
+    .current.incorrect {
+        background-color: rgba(220, 53, 69, 0.2);  /* Bootstrap danger color with opacity */
+    }
+    #cursor {
+        color: #198754;
+        font-weight: bold;
+        margin-left: -2px;
+    }
+    #cursor.error {
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <div class="row justify-content-center">
@@ -49,6 +78,7 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
 {% block extra_js %}
 <script>
@@ -58,6 +88,23 @@
     let endTime = null;
     let isTestActive = false;
     let timerInterval = null;
+
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
 
     function updateTimer() {
         if (!isTestActive) return;
@@ -177,7 +224,7 @@
             type: 'POST',
             data: {
                 text: text,
-                csrfmiddlewaretoken: '{{ csrf_token }}'
+                csrfmiddlewaretoken: csrftoken
             },
             success: function(response) {
                 originalText = response.text;
@@ -192,7 +239,8 @@
                     scrollTop: $("#test-area").offset().top - 20
                 }, 500);
             },
-            error: function() {
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
                 alert('Error creating test. Please try again.');
             }
         });
@@ -217,5 +265,4 @@
         $('#input-text').focus();
     });
 </script>
-{% endblock %}
 {% endblock %}
