@@ -1,11 +1,13 @@
-from django.shortcuts import render, redirect
-from django.http import JsonResponse
-from django.db.models import Count
-from django.core.paginator import Paginator
-from .models import TypingTest, CustomWord
 from collections import Counter
-import random
 import json
+import random
+
+from django.core.paginator import Paginator
+from django.db.models import Count
+from django.http import JsonResponse
+from django.shortcuts import redirect, render
+
+from .models import CustomWord, TypingTest
 
 def home(request):
     words_count = CustomWord.objects.count()
@@ -202,3 +204,19 @@ def delete_word(request, word_id):
     if request.method == 'POST':
         CustomWord.objects.filter(id=word_id).delete()
     return redirect('speed_test:manage_words')
+
+def custom_test(request):
+    return render(request, 'speed_test/custom_test.html')
+
+def get_custom_text(request):
+    if request.method == 'POST':
+        text = request.POST.get('text', '').strip()
+        if text:
+            # Split text into words and remove empty strings
+            words = [word for word in text.split() if word]
+            # Randomize the word order
+            random.shuffle(words)
+            # Join words back with spaces
+            shuffled_text = ' '.join(words)
+            return JsonResponse({'text': shuffled_text})
+    return JsonResponse({'error': 'No text provided'}, status=400)
