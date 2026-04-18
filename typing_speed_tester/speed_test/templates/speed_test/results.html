@@ -40,6 +40,68 @@
         </div>
     </div>
 
+    {% if total_tests > 0 %}
+    <div class="row mb-4">
+        <div class="col-md-8 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Overall Performance</h5>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <span class="badge bg-primary stats-badge">
+                            <i class="bi bi-speedometer2"></i>
+                            {{ avg_wpm }} Avg WPM
+                        </span>
+                        <span class="badge bg-success stats-badge">
+                            <i class="bi bi-trophy"></i>
+                            {{ max_wpm }} Best WPM
+                        </span>
+                        <span class="badge bg-info stats-badge">
+                            <i class="bi bi-check-circle"></i>
+                            {{ avg_accuracy }}% Avg Accuracy
+                        </span>
+                        <span class="badge bg-secondary stats-badge">
+                            <i class="bi bi-clock"></i>
+                            {{ total_time }} mins Total
+                        </span>
+                        <span class="badge bg-dark stats-badge">
+                            <i class="bi bi-journal-text"></i>
+                            {{ total_tests }} Tests
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Top 5 Easiest Words</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Word</th>
+                                    <th>Stats</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in top_easiest %}
+                                <tr>
+                                    <td><code>{{ item.word }}</code></td>
+                                    <td>{{ item.success_rate|floatformat:0 }}% (Typed: {{ item.typed }})</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="2" class="text-muted">Need more data...</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {% if results %}
         <div class="row">
             {% for result in results %}

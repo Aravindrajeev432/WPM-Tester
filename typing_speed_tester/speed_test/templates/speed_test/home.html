@@ -89,13 +89,25 @@
                             <div id="live-wpm" class="me-3">WPM: 0</div>
                             <div class="timer" id="timer">Time: 0s</div>
                         </div>
-                        <div class="mt-2">
-                            <label for="word-count" class="form-label">Number of Words:</label>
-                            <select class="form-select form-select-sm d-inline-block w-auto" id="word-count">
-                                {% for i in "xxxxxxxxxxxxxxxx" %}
-                                    <option value="{{ forloop.counter|add:9 }}">{{ forloop.counter|add:9 }}</option>
-                                {% endfor %}
-                            </select>
+                        <div class="mt-2 d-flex flex-column align-items-end">
+                            <div class="mb-2">
+                                <label for="word-count" class="form-label me-1">Words:</label>
+                                <select class="form-select form-select-sm d-inline-block w-auto" id="word-count">
+                                    {% for i in "xxxxxxxxxxxxxxxx" %}
+                                        <option value="{{ forloop.counter|add:9 }}">{{ forloop.counter|add:9 }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label for="max-word-length" class="form-label me-1 mb-0">Max Length: <span id="max-length-display">15</span></label>
+                                <input type="range" class="form-range d-inline-block align-middle" id="max-word-length" min="3" max="25" value="15" style="width: 100px;">
+                            </div>
+                            <div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="startover-mistake" checked>
+                                    <label class="form-check-label" style="font-size: 0.9rem;" for="startover-mistake">Startover on mistake</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div>
@@ -165,7 +177,8 @@
 
     function getRandomText() {
         const wordCount = $('#word-count').val();
-        $.get('/get_text/', { word_count: wordCount }, function(data) {
+        const maxLength = $('#max-word-length').val();
+        $.get('/get_text/', { word_count: wordCount, max_length: maxLength }, function(data) {
             if (data.error) {
                 $('#sample-text').html('<div class="alert alert-warning">' + data.error + '</div>');
                 $('#start-btn').prop('disabled', true);
@@ -407,10 +420,14 @@
             $('#mistakes-list').prepend(mistakeRow);
             $('#mistakes-section').show();
             
-            // Add a small delay before resetting to show the error state
-            setTimeout(() => {
-                resetTest(false);
-            }, 200);
+            if ($('#startover-mistake').is(':checked')) {
+                // Add a small delay before resetting to show the error state
+                setTimeout(() => {
+                    resetTest(false);
+                }, 200);
+            } else {
+                this.value = '';
+            }
             return;
         }
 
@@ -429,6 +446,10 @@
 
     $('#input-text').on('input', handleInput);
 
+    $('#max-word-length').on('input', function() {
+        $('#max-length-display').text($(this).val());
+    });
+
     $('#start-btn').click(function() {
         if (!isTestActive) {
             $(this).text('Restart Test');
@@ -436,6 +457,29 @@
         } else {
             $(this).text('Start Test');
             resetTest(true); 
+        }
+    });
+
+    // Save and load settings
+    $('#word-count, #max-word-length').on('change input', function() {
+        localStorage.setItem(this.id, $(this).val());
+    });
+    
+    $('#startover-mistake').on('change', function() {
+        localStorage.setItem(this.id, $(this).is(':checked'));
+    });
+
+    $(document).ready(function() {
+        if (localStorage.getItem('word-count')) {
+            $('#word-count').val(localStorage.getItem('word-count'));
+        }
+        if (localStorage.getItem('max-word-length')) {
+            const maxLen = localStorage.getItem('max-word-length');
+            $('#max-word-length').val(maxLen);
+            $('#max-length-display').text(maxLen);
+        }
+        if (localStorage.getItem('startover-mistake') !== null) {
+            $('#startover-mistake').prop('checked', localStorage.getItem('startover-mistake') === 'true');
         }
     });
 </script>

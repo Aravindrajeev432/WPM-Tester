@@ -2,6 +2,22 @@ from collections import Counter
 import json
 import random
 
+FINGER_MAP = {
+    '1': 'Left Pinky', 'q': 'Left Pinky', 'a': 'Left Pinky', 'z': 'Left Pinky', '!': 'Left Pinky', 'Q': 'Left Pinky', 'A': 'Left Pinky', 'Z': 'Left Pinky', '`': 'Left Pinky', '~': 'Left Pinky',
+    '2': 'Left Ring', 'w': 'Left Ring', 's': 'Left Ring', 'x': 'Left Ring', '@': 'Left Ring', 'W': 'Left Ring', 'S': 'Left Ring', 'X': 'Left Ring',
+    '3': 'Left Middle', 'e': 'Left Middle', 'd': 'Left Middle', 'c': 'Left Middle', '#': 'Left Middle', 'E': 'Left Middle', 'D': 'Left Middle', 'C': 'Left Middle',
+    '4': 'Left Index', 'r': 'Left Index', 'f': 'Left Index', 'v': 'Left Index', '$': 'Left Index', 'R': 'Left Index', 'F': 'Left Index', 'V': 'Left Index',
+    '5': 'Left Index', 't': 'Left Index', 'g': 'Left Index', 'b': 'Left Index', '%': 'Left Index', 'T': 'Left Index', 'G': 'Left Index', 'B': 'Left Index',
+    ' ': 'Thumbs',
+    '6': 'Right Index', 'y': 'Right Index', 'h': 'Right Index', 'n': 'Right Index', '^': 'Right Index', 'Y': 'Right Index', 'H': 'Right Index', 'N': 'Right Index',
+    '7': 'Right Index', 'u': 'Right Index', 'j': 'Right Index', 'm': 'Right Index', '&': 'Right Index', 'U': 'Right Index', 'J': 'Right Index', 'M': 'Right Index',
+    '8': 'Right Middle', 'i': 'Right Middle', 'k': 'Right Middle', ',': 'Right Middle', '*': 'Right Middle', 'I': 'Right Middle', 'K': 'Right Middle', '<': 'Right Middle',
+    '9': 'Right Ring', 'o': 'Right Ring', 'l': 'Right Ring', '.': 'Right Ring', '(': 'Right Ring', 'O': 'Right Ring', 'L': 'Right Ring', '>': 'Right Ring',
+    '0': 'Right Pinky', 'p': 'Right Pinky', ';': 'Right Pinky', '/': 'Right Pinky', ')': 'Right Pinky', 'P': 'Right Pinky', ':': 'Right Pinky', '?': 'Right Pinky',
+    '-': 'Right Pinky', '_': 'Right Pinky', '=': 'Right Pinky', '+': 'Right Pinky', '[': 'Right Pinky', '{': 'Right Pinky', ']': 'Right Pinky', '}': 'Right Pinky',
+    '\\': 'Right Pinky', '|': 'Right Pinky', '\'': 'Right Pinky', '"': 'Right Pinky',
+}
+
 from django.core.paginator import Paginator
 from django.db.models import Count
 from django.http import JsonResponse
@@ -15,10 +31,16 @@ def home(request):
 
 def get_text(request):
     words = list(CustomWord.objects.values_list('word', flat=True))
+    max_length = request.GET.get('max_length')
+    
+    if max_length and max_length.isdigit():
+        max_len = int(max_length)
+        words = [w for w in words if len(w) <= max_len]
+
     if not words:
         return JsonResponse({
             'text': '',
-            'error': 'No words available. Please add some words first.'
+            'error': 'No words available. Please add some words or increase max word length.'
         })
     
     # Get word count from request, default to 10
@@ -96,17 +118,71 @@ def view_results(request):
     # Get all results ordered by most recent first
     all_results = TypingTest.objects.all().order_by('-created_at')
     
-    # Add word count and process mistakes for each result
+    total_wpm = 0
+    max_wpm = 0
+    total_time = 0
+    total_accuracy = 0
+    test_count = len(all_results)
+    
+    typed_words = Counter()
+    mistaken_words = Counter()
+    
+    # Process stats and word counts
     for result in all_results:
-        result.word_count = len(result.text.split())
+        total_wpm += result.wpm
+        if result.wpm > max_wpm:
+            max_wpm = result.wpm
+        total_time += result.time_taken
+        total_accuracy += result.accuracy
+        
+        words = result.text.split()
+        result.word_count = len(words)
         result.mistake_count = len(result.mistakes)
+        
+        for w in words:
+            typed_words[w] += 1
+            
+        for wm in result.word_mistakes:
+            mistaken_words[wm['word']] += 1
+            
+    avg_wpm = total_wpm / test_count if test_count > 0 else 0
+    avg_accuracy = total_accuracy / test_count if test_count > 0 else 0
+    
+    active_words = set(CustomWord.objects.values_list('word', flat=True))
+    
+    # Easiest words: Typed frequently with highest success rate
+    easiest_words_list = []
+    for word, count in typed_words.items():
+        if count >= 1 and word in active_words:
+            mistakes = mistaken_words.get(word, 0)
+            success_rate = (count - mistakes) / count
+            easiest_words_list.append({
+                'word': word, 
+                'success_rate': success_rate * 100,
+                'typed': count, 
+                'mistakes': mistakes
+            })
+            
+    # Sort by success rate (desc), then total typed (desc)
+    easiest_words_list.sort(key=lambda x: (x['success_rate'], x['typed']), reverse=True)
+    top_5_easiest = easiest_words_list[:5]
     
     # Create paginator
     paginator = Paginator(all_results, 5)  # Show 5 results per page
     page_number = request.GET.get('page', 1)
     results = paginator.get_page(page_number)
     
-    return render(request, 'speed_test/results.html', {'results': results})
+    context = {
+        'results': results,
+        'avg_wpm': round(avg_wpm),
+        'max_wpm': max_wpm,
+        'avg_accuracy': round(avg_accuracy, 1),
+        'total_time': round(total_time / 60, 1),
+        'top_easiest': top_5_easiest,
+        'total_tests': test_count
+    }
+    
+    return render(request, 'speed_test/results.html', context)
 
 def view_mistakes(request):
     # Get all tests with mistakes ordered by most recent first
@@ -121,6 +197,7 @@ def view_mistakes(request):
     letter_mistake_counts = Counter()
     wrong_typed_counts = Counter()
     common_mistakes = Counter()
+    finger_mistake_counts = Counter()
     
     for test in tests:
         # Process word mistakes
@@ -129,10 +206,14 @@ def view_mistakes(request):
         
         # Process character mistakes
         for mistake in test.mistakes:
-            letter_mistake_counts[mistake['expected']] += 1
+            expected = mistake['expected']
+            letter_mistake_counts[expected] += 1
             wrong_typed_counts[mistake['typed']] += 1
-            mistake_key = (mistake['expected'], mistake['typed'])
+            mistake_key = (expected, mistake['typed'])
             common_mistakes[mistake_key] += 1
+            
+            finger = FINGER_MAP.get(expected, 'Unknown')
+            finger_mistake_counts[finger] += 1
     
     # Get top 10 most mistaken words
     most_mistaken_words = [
@@ -158,6 +239,11 @@ def view_mistakes(request):
         for (exp, typed), count in common_mistakes.most_common(10)
     ]
     
+    finger_mistakes = [
+        {'finger': finger, 'count': count}
+        for finger, count in finger_mistake_counts.most_common()
+    ]
+    
     # Add mistake details to each test
     for test in tests:
         test.mistake_count = len(test.mistakes)
@@ -173,6 +259,7 @@ def view_mistakes(request):
         'total_tests': total_tests,
         'total_mistakes': total_mistakes,
         'most_mistaken_words': most_mistaken_words,
+        'finger_mistakes': finger_mistakes,
         'most_mistaken_letters': most_mistaken_letters,
         'most_wrong_typed': most_wrong_typed,
         'common_mistakes': common_mistakes_list,
