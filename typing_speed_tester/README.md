@@ -1,44 +1,33 @@
-# Typing Speed Tester
+# TypeFlow: Advanced Typing Speed Tester
 
-A modern, feature-rich typing speed test application built with Django. Test and improve your typing speed with real-time feedback and detailed mistake analysis.
+A deeply interactive, modern typing speed suite built on Django. Hone your finger dexterity with highly analytical feedback loops, custom dictionaries, intelligent auditory telemetry, and biomechanic finger analysis. 
 
-*Built with [Windsurf](https://www.codeium.com/windsurf), the world's first agentic IDE.*
 
-## Features
+## 🚀 Key Features
 
-- **Real-time Typing Feedback**
-  - Live WPM (Words Per Minute) counter
-  - Character-by-character accuracy feedback
-  - Color-coded visual feedback (green for correct, red for mistakes)
-  - Instant cursor position tracking
+### 🎧 Adaptive Auditory Telemetry & Dictation
+- **Typewriter Acoustics:** Employs the native Web Audio API to yield instantaneous high-frequency soft ticks for successful keystrokes and dual-harmonic bells upon completion.
+- **Immediate Error Feedback:** Generates harsh 150Hz sawtooth warning-buzzes the precise millisecond you create a typo.
+- **Accessibility & Dictation:** A Web Speech API dictation engine that proactively reads words out loud. Explicitly features "blind recovery" spellouts (e.g., "capital S") when you type incorrectly so you never have to look down at the keyboard!
 
-- **Comprehensive Statistics**
-  - Words Per Minute (WPM) calculation
-  - Accuracy percentage
-  - Time taken per test
-  - Detailed mistake tracking
+### 📊 Biomechanical & Advanced Analytics
+- **QWERTY Finger Mapping:** Algorithmically maps your exact typo behavior against 10 distinct standard touch-typing finger assignments to detect biomechanical weaknesses in your reaches.
+- **Global Dashboards:** High-level metrics tracking lifetime average speeds, best WPMs, true global accuracy, and aggregate active typing engagement logic.
+- **Leaderboards:** Maps your success trajectories factoring in frequencies to isolate your Top 5 personal "Easiest" dictionary words.
 
-- **Mistake Analysis**
-  - Track and display common typing mistakes
-  - Word-level mistake analysis
-  - Character-level mistake patterns
-  - Most frequently mistyped words and characters
+### ⚙️ Deep Configuration Persistence & Customization
+- **Modern Bootstrap 5 UI:** A gorgeously sleek dashboard equipped with toggles, badges, segregated telemetry layers, and distinct aesthetic boundaries.
+- **Client-State Saving:** Your exact testing preferences (dictation on/off, ironclad modes, word counts) are mapped safely inside `localStorage` to effortlessly survive reloading.
+- **Dynamic Database Slider Integration:** Backend Postgres aggregate queries natively evaluate your specific dynamic vocabulary minimum and maximum bounds.
+- **"Startover on Mistake":** Toggle an aggressive Ironman enforcer that strictly punishes errors by instantly routing you back to absolute zero.
+- **Word Dictionary Management:** Fully interactive curation system allowing dynamic addition and removal of testing lexicons.
 
-- **Customizable Tests**
-  - Adjustable word count (10-25 words)
-  - Option to retry the same text
-  - Clean, distraction-free interface
+## 🛠️ Technology Stack
+- **Backend**: Python 3, Django 4.2
+- **Frontend**: Bootstrap 5 Grid Layouts, HTML5 Web Speech and Web Audio APIs, jQuery, Custom JS State Management
+- **Storage**: SQLite3 Relational DB, Browser `localStorage`
 
-## Technology Stack
-
-- **Backend**: Django 4.2
-- **Frontend**: 
-  - HTML5, CSS3, JavaScript
-  - Bootstrap 5
-  - jQuery
-- **Database**: SQLite3
-
-## Installation
+## ⚙️ Installation
 
 1. Clone the repository:
    ```bash
@@ -67,39 +56,13 @@ A modern, feature-rich typing speed test application built with Django. Test and
    python manage.py runserver
    ```
 
-6. Visit `http://127.0.0.1:8000/` in your browser
+6. Navigate to `http://127.0.0.1:8000/` in your browser to start typing!
 
-## Usage
+## 🤝 Contributing
+Contributions are absolutely welcome! Please feel free to submit a Pull Request to help us augment our analytics pipelines or UI interactions.
 
-1. **Start a Test**
-   - Select the number of words (10-25)
-   - Click "Start Test"
-   - Begin typing in the input field
-
-2. **During the Test**
-   - Watch your live WPM above the text
-   - Green highlighting indicates correct typing
-   - Red highlighting shows mistakes
-   - The cursor shows your current position
-
-3. **View Results**
-   - See your final WPM, accuracy, and time
-   - Review any mistakes made during the test
-   - Option to retry the same text or start a new test
-
-4. **Analyze Mistakes**
-   - Visit the Mistakes page to see detailed statistics
-   - View most common mistakes
-   - Track improvement over time
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
+## 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
-
 *Created with ❤️ using [Windsurf](https://www.codeium.com/windsurf), the revolutionary agentic IDE that makes coding a breeze.*
