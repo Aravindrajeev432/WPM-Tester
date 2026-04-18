@@ -19,7 +19,8 @@ FINGER_MAP = {
 }
 
 from django.core.paginator import Paginator
-from django.db.models import Count
+from django.db.models import Count, Min, Max
+from django.db.models.functions import Length
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
@@ -27,7 +28,22 @@ from .models import CustomWord, TypingTest
 
 def home(request):
     words_count = CustomWord.objects.count()
-    return render(request, 'speed_test/home.html', {'words_count': words_count})
+    if words_count > 0:
+        agg = CustomWord.objects.annotate(word_len=Length('word')).aggregate(
+            min_len=Min('word_len'),
+            max_len=Max('word_len')
+        )
+        min_length = agg['min_len'] or 3
+        max_length = agg['max_len'] or 25
+    else:
+        min_length = 3
+        max_length = 25
+        
+    return render(request, 'speed_test/home.html', {
+        'words_count': words_count,
+        'min_length': min_length,
+        'max_length': max_length
+    })
 
 def get_text(request):
     words = list(CustomWord.objects.values_list('word', flat=True))

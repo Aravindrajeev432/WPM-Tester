@@ -115,9 +115,9 @@
                             <div class="d-flex flex-column justify-content-center">
                                 <label for="max-word-length" class="form-label mb-1 text-secondary fw-bold small d-flex justify-content-between">
                                     <span>MAX LENGTH</span>
-                                    <span class="badge bg-primary rounded-pill"><span id="max-length-display">15</span></span>
+                                    <span class="badge bg-primary rounded-pill"><span id="max-length-display">{{ max_length }}</span></span>
                                 </label>
-                                <input type="range" class="form-range" id="max-word-length" min="3" max="25" value="15">
+                                <input type="range" class="form-range" id="max-word-length" min="{{ min_length }}" max="{{ max_length }}" value="{{ max_length }}">
                             </div>
                         </div>
 
@@ -653,7 +653,7 @@
         if (localStorage.getItem('max-word-length')) {
             const maxLen = localStorage.getItem('max-word-length');
             $('#max-word-length').val(maxLen);
-            $('#max-length-display').text(maxLen);
+            $('#max-length-display').text($('#max-word-length').val());
         }
         if (localStorage.getItem('startover-mistake') !== null) {
             $('#startover-mistake').prop('checked', localStorage.getItem('startover-mistake') === 'true');
