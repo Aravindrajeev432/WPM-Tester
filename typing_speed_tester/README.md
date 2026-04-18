@@ -57,12 +57,3 @@ A deeply interactive, modern typing speed suite built on Django. Hone your finge
    ```
 
 6. Navigate to `http://127.0.0.1:8000/` in your browser to start typing!
-
-## 🤝 Contributing
-Contributions are absolutely welcome! Please feel free to submit a Pull Request to help us augment our analytics pipelines or UI interactions.
-
-## 📄 License
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-*Created with ❤️ using [Windsurf](https://www.codeium.com/windsurf), the revolutionary agentic IDE that makes coding a breeze.*
