@@ -80,42 +80,75 @@
     <div class="col-lg-10">
         <div class="card mb-4">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <h5 class="card-title mb-0">Typing Test</h5>
+                <!-- Header Title & Stats -->
+                <div class="row align-items-center border-bottom pb-3 mb-4">
+                    <div class="col-md-6">
+                        <h4 class="card-title fw-bold m-0 text-primary">
+                           <i class="bi bi-keyboard"></i> TypeFlow
+                        </h4>
                     </div>
-                    <div>
-                        <div class="d-flex align-items-center">
-                            <div id="live-wpm" class="me-3">WPM: 0</div>
-                            <div class="timer" id="timer">Time: 0s</div>
+                    <div class="col-md-6 text-md-end mt-3 mt-md-0 d-flex justify-content-md-end gap-3">
+                        <div class="bg-light px-3 py-2 rounded shadow-sm border">
+                            <span id="live-wpm" class="fs-6 fw-bold text-success"><i class="bi bi-speedometer2"></i> WPM: 0</span>
                         </div>
-                        <div class="mt-2 d-flex flex-column align-items-end">
-                            <div class="mb-2">
-                                <label for="word-count" class="form-label me-1">Words:</label>
-                                <select class="form-select form-select-sm d-inline-block w-auto" id="word-count">
+                        <div class="bg-light px-3 py-2 rounded shadow-sm border">
+                            <span id="timer" class="fs-6 fw-bold text-info"><i class="bi bi-clock"></i> Time: 0s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Toolbar -->
+                <div class="bg-light p-3 rounded-3 shadow-sm border mb-4">
+                    <div class="row align-items-center gy-3">
+                        <div class="col-lg-3 col-md-6">
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="word-count" class="form-label mb-0 text-secondary fw-bold small">WORDS :</label>
+                                <select class="form-select form-select-sm w-auto shadow-sm" id="word-count">
                                     {% for i in "xxxxxxxxxxxxxxxx" %}
                                         <option value="{{ forloop.counter|add:9 }}">{{ forloop.counter|add:9 }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
-                            <div class="mb-2">
-                                <label for="max-word-length" class="form-label me-1 mb-0">Max Length: <span id="max-length-display">15</span></label>
-                                <input type="range" class="form-range d-inline-block align-middle" id="max-word-length" min="3" max="25" value="15" style="width: 100px;">
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6">
+                            <div class="d-flex flex-column justify-content-center">
+                                <label for="max-word-length" class="form-label mb-1 text-secondary fw-bold small d-flex justify-content-between">
+                                    <span>MAX LENGTH</span>
+                                    <span class="badge bg-primary rounded-pill"><span id="max-length-display">15</span></span>
+                                </label>
+                                <input type="range" class="form-range" id="max-word-length" min="3" max="25" value="15">
                             </div>
-                            <div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="startover-mistake" checked>
-                                    <label class="form-check-label" style="font-size: 0.9rem;" for="startover-mistake">Startover on mistake</label>
-                                </div>
+                        </div>
+
+                        <div class="col-lg-6 col-md-12 d-flex flex-wrap justify-content-lg-end gap-4 align-items-center">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input shadow-sm" type="checkbox" id="startover-mistake" checked>
+                                <label class="form-check-label text-secondary fw-bold small mt-1" for="startover-mistake">RESTART ON MISTAKE</label>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input shadow-sm" type="checkbox" id="say-words">
+                                <label class="form-check-label text-secondary fw-bold small mt-1" for="say-words">DICTATION</label>
                             </div>
                         </div>
                     </div>
-                    <div>
-                        <a href="{% url 'speed_test:mistakes' %}" class="btn btn-info me-2">View Mistakes History</a>
-                        <a href="{% url 'speed_test:results' %}" class="btn btn-info me-2">View Results</a>
-                        <a href="{% url 'speed_test:manage_words' %}" class="btn btn-secondary me-2">Manage Words ({{ words_count }})</a>
-                        <button class="btn btn-primary" id="start-btn" {% if words_count == 0 %}disabled{% endif %}>Start Test</button>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'speed_test:manage_words' %}" class="btn btn-outline-secondary btn-sm shadow-sm fw-bold">
+                            <i class="bi bi-gear-fill border-0"></i> Manage Words ({{ words_count }})
+                        </a>
+                        <a href="{% url 'speed_test:mistakes' %}" class="btn btn-outline-danger btn-sm shadow-sm fw-bold">
+                            <i class="bi bi-bug-fill border-0"></i> Mistakes
+                        </a>
+                        <a href="{% url 'speed_test:results' %}" class="btn btn-outline-success btn-sm shadow-sm fw-bold">
+                            <i class="bi bi-bar-chart-fill border-0"></i> Results
+                        </a>
                     </div>
+                    
+                    <button class="btn btn-primary btn-lg px-5 shadow-sm fw-bold text-uppercase" id="start-btn" {% if words_count == 0 %}disabled{% endif %} style="letter-spacing: 1px;">Start Test</button>
                 </div>
                 
                 {% if words_count == 0 %}
@@ -170,10 +203,129 @@
 <script>
     let startTime, endTime, timerInterval;
     let isTestActive = false;
+    let hasStartedTyping = false;
     let currentIndex = 0;
     let originalText = '';
+    let wordsArray = [];
+    let currentWordIndex = 0;
     let mistakes = [];
     let currentTestMistakes = [];
+
+    // Cache the voices as they load asynchronously in the browser
+    let synthVoices = [];
+    window.speechSynthesis.onvoiceschanged = () => {
+        synthVoices = window.speechSynthesis.getVoices();
+    };
+
+    let audioCtx = null;
+    function playErrorSound() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(150, audioCtx.currentTime); 
+        
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.15);
+    }
+
+    function playClickSound() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.type = 'sine'; 
+        oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+        gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.05);
+    }
+
+    function playBellSound() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const frequencies = [880, 1760]; // Bell harmonics (A5, A6)
+        frequencies.forEach(freq => {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 1.5);
+        });
+    }
+
+    function speakCharacter(char) {
+        window.speechSynthesis.cancel();
+        
+        let textToSpeak = char;
+        if (char === ' ') {
+            textToSpeak = 'space';
+        } else if (char === char.toUpperCase() && char.toLowerCase() !== char.toUpperCase()) {
+            textToSpeak = 'capital ' + char;
+        }
+
+        const msg = new SpeechSynthesisUtterance(textToSpeak);
+        msg.rate = 1.0; 
+        
+        if (synthVoices.length === 0) {
+            synthVoices = window.speechSynthesis.getVoices();
+        }
+        
+        let preferredVoice = synthVoices.find(v => v.name.includes('Samantha') || v.name.includes('Google US English'));
+        if (!preferredVoice) {
+            preferredVoice = synthVoices.find(v => v.lang === 'en-US' || v.lang === 'en-GB');
+        }
+        if (preferredVoice) {
+            msg.voice = preferredVoice;
+        }
+        
+        window.speechSynthesis.speak(msg);
+    }
+
+    function speakWord(word) {
+        if (!word || !$('#say-words').is(':checked')) return;
+        window.speechSynthesis.cancel();
+        
+        const msg = new SpeechSynthesisUtterance(word);
+        msg.rate = 0.82; // Slower rate for clearer enunciation
+        
+        if (synthVoices.length === 0) {
+            synthVoices = window.speechSynthesis.getVoices();
+        }
+        
+        // Look for premium clear voices explicitly (Samantha on Mac, or Google generic)
+        let preferredVoice = synthVoices.find(v => v.name.includes('Samantha') || v.name.includes('Google US English'));
+        if (!preferredVoice) {
+            // Fallback to any standard English voice
+            preferredVoice = synthVoices.find(v => v.lang === 'en-US' || v.lang === 'en-GB');
+        }
+        if (preferredVoice) {
+            msg.voice = preferredVoice;
+        }
+        
+        window.speechSynthesis.speak(msg);
+    }
 
     function getRandomText() {
         const wordCount = $('#word-count').val();
@@ -184,6 +336,7 @@
                 $('#start-btn').prop('disabled', true);
             } else {
                 originalText = data.text;
+                wordsArray = originalText.split(' ');
                 mistakes = [];
                 currentTestMistakes = [];
                 displayText();
@@ -280,14 +433,19 @@
         $('#result').addClass('d-none');
         $('.correct, .incorrect').removeClass('correct incorrect');
         displayText();
-        startTime = new Date();
+        
         if (timerInterval) clearInterval(timerInterval);
-        timerInterval = setInterval(updateTimer, 1000);
+        timerInterval = null;
+        hasStartedTyping = false;
+        
+        currentWordIndex = 0;
+        speakWord(wordsArray[currentWordIndex]);
     }
 
     function resetTest(getNewWords = true) {
         currentIndex = 0;
         isTestActive = false;
+        hasStartedTyping = false;
         $('#input-text').val('').prop('disabled', false);
         $('#result').addClass('d-none');
         $('#start-btn').text('Start Test');
@@ -344,6 +502,8 @@
         endTime = new Date();
         clearInterval(timerInterval);
         
+        playBellSound();
+        
         const timeInSeconds = (endTime - startTime) / 1000;
         const wpm = calculateWPM(originalText, timeInSeconds);
         const accuracy = calculateAccuracy(originalText, currentIndex);
@@ -387,6 +547,13 @@
     }
 
     function handleInput() {
+        if (!hasStartedTyping) {
+            hasStartedTyping = true;
+            startTime = new Date();
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+        
         const currentChar = originalText[currentIndex];
         const typedChar = this.value;
         
@@ -397,10 +564,20 @@
             currentIndex++;
             currentElement.addClass('correct').removeClass('incorrect');
             $('#cursor').removeClass('error');
+            
+            playClickSound();
+            
+            if (currentChar === ' ') {
+                currentWordIndex++;
+                speakWord(wordsArray[currentWordIndex]);
+            }
         } else {
             // Show error state
             $('#cursor').addClass('error');
             currentElement.addClass('incorrect').removeClass('correct');
+            
+            playErrorSound();
+            speakCharacter(currentChar);
             
             const mistake = {
                 expected: currentChar,
@@ -465,7 +642,7 @@
         localStorage.setItem(this.id, $(this).val());
     });
     
-    $('#startover-mistake').on('change', function() {
+    $('#startover-mistake, #say-words').on('change', function() {
         localStorage.setItem(this.id, $(this).is(':checked'));
     });
 
@@ -480,6 +657,9 @@
         }
         if (localStorage.getItem('startover-mistake') !== null) {
             $('#startover-mistake').prop('checked', localStorage.getItem('startover-mistake') === 'true');
+        }
+        if (localStorage.getItem('say-words') !== null) {
+            $('#say-words').prop('checked', localStorage.getItem('say-words') === 'true');
         }
     });
 </script>
