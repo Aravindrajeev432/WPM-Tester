@@ -397,17 +397,10 @@
         return Math.round(words / minutes);
     }
 
-    function calculateAccuracy(original, typed) {
-        if (typed.length === 0) return 0;
-        
-        let correct = 0;
-        const minLength = Math.min(original.length, typed.length);
-        
-        for (let i = 0; i < minLength; i++) {
-            if (original[i] === typed[i]) correct++;
-        }
-        
-        return Math.round((correct / original.length) * 100);
+    function calculateAccuracy(correctCount, mistakeCount) {
+        const total = correctCount + mistakeCount;
+        if (total === 0) return 0;
+        return Math.round((correctCount / total) * 100);
     }
 
     function updateTimer() {
@@ -506,7 +499,7 @@
         
         const timeInSeconds = (endTime - startTime) / 1000;
         const wpm = calculateWPM(originalText, timeInSeconds);
-        const accuracy = calculateAccuracy(originalText, currentIndex);
+        const accuracy = calculateAccuracy(currentIndex, currentTestMistakes.length);
         
         $('#wpm').text(wpm);
         $('#accuracy').text(accuracy);

@@ -205,8 +205,10 @@ def view_mistakes(request):
     tests = TypingTest.objects.exclude(mistakes=[]).order_by('-created_at')
     
     # Calculate total tests and mistakes
+    total_tests_all = TypingTest.objects.count()
     total_tests = tests.count()
     total_mistakes = sum(len(test.mistakes) for test in tests)
+    avg_mistakes = total_mistakes / total_tests_all if total_tests_all > 0 else 0
     
     # Process word-level mistakes
     word_mistake_counts = Counter()
@@ -272,8 +274,9 @@ def view_mistakes(request):
     
     context = {
         'tests': page_obj,
-        'total_tests': total_tests,
+        'total_tests': total_tests_all,
         'total_mistakes': total_mistakes,
+        'avg_mistakes': round(avg_mistakes, 1),
         'most_mistaken_words': most_mistaken_words,
         'finger_mistakes': finger_mistakes,
         'most_mistaken_letters': most_mistaken_letters,

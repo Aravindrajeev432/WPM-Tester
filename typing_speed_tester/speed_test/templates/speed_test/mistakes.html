@@ -49,7 +49,7 @@
                     </span>
                     <span class="badge bg-info stats-badge">
                         <i class="bi bi-calculator"></i>
-                        {% if total_tests %}{{ total_mistakes|divisibleby:total_tests|floatformat:1 }}{% else %}0{% endif %} Avg. Mistakes/Test
+                        {{ avg_mistakes }} Avg. Mistakes/Test
                     </span>
                 </div>
             </div>
