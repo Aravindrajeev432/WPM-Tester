@@ -88,6 +88,7 @@
     let endTime = null;
     let isTestActive = false;
     let timerInterval = null;
+    let currentTestMistakesCount = 0;
 
     // Get CSRF token
     function getCookie(name) {
@@ -152,14 +153,17 @@
         return Math.round(words / minutes);
     }
 
-    function calculateAccuracy(original, typed) {
-        return Math.round((typed / original.length) * 100);
+    function calculateAccuracy(correctCount, mistakeCount) {
+        const total = correctCount + mistakeCount;
+        if (total === 0) return 0;
+        return Math.round((correctCount / total) * 100);
     }
 
     function startTypingTest() {
         isTestActive = true;
         startTime = new Date();
         currentIndex = 0;
+        currentTestMistakesCount = 0;
         $('#input-text').prop('disabled', false).val('').focus();
         timerInterval = setInterval(updateTimer, 1000);
         $('#start-btn').text('Restart Test');
@@ -175,7 +179,7 @@
         
         const timeInSeconds = (endTime - startTime) / 1000;
         const wpm = calculateWPM(originalText, timeInSeconds);
-        const accuracy = calculateAccuracy(originalText, currentIndex);
+        const accuracy = calculateAccuracy(currentIndex, currentTestMistakesCount);
         
         $('#wpm').text(wpm);
         $('#accuracy').text(accuracy);
@@ -203,9 +207,14 @@
             $('#cursor').removeClass('error');
             currentIndex++;
             updateCursor(currentIndex);
+            
+            if (currentIndex >= originalText.length) {
+                finishTest();
+            }
         } else {
             // Wrong typing
             $('#cursor').addClass('error');
+            currentTestMistakesCount++;
         }
         
         this.value = '';
